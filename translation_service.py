@@ -3,7 +3,6 @@ OpenVINOを使った翻訳サービス
 Helsinki-NLP/opus-mt モデルを使用して多言語翻訳を実現
 """
 
-import os
 from pathlib import Path
 from typing import Optional
 from optimum.intel import OVModelForSeq2SeqLM
@@ -59,14 +58,14 @@ class TranslationService:
 
             # モデルが既にエクスポートされているか確認
             if not model_path.exists():
-                logger.info(f"Exporting model to OpenVINO format...")
+                logger.info("Exporting model to OpenVINO format...")
                 # PyTorchモデルをOpenVINO形式にエクスポート
                 model = OVModelForSeq2SeqLM.from_pretrained(
                     model_name, export=True, compile=True
                 )
                 model.save_pretrained(model_path)
             else:
-                logger.info(f"Loading cached OpenVINO model...")
+                logger.info("Loading cached OpenVINO model...")
                 model = OVModelForSeq2SeqLM.from_pretrained(model_path, compile=True)
 
             tokenizer = AutoTokenizer.from_pretrained(model_name)
