@@ -124,6 +124,7 @@ dmypy.json
 
 # OpenVINO models cache
 models/
+test_models/
 *.xml
 *.bin
 
@@ -137,3 +138,9 @@ models/
 # OS
 .DS_Store
 Thumbs.db
+
+# Test coverage
+.coverage
+htmlcov/
+coverage.xml
+.pytest_cache/

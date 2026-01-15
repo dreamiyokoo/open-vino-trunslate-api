@@ -107,14 +107,23 @@ open-vino-trunslate-api/
 ├── main.py                    # FastAPIアプリケーション
 ├── translation_service.py     # OpenVINO翻訳サービス
 ├── requirements.txt           # 依存パッケージ
+├── requirements-dev.txt       # 開発用パッケージ
+├── pytest.ini                 # pytestの設定
+├── .coveragerc                # カバレッジ設定
+├── README.md                  # このファイル
 ├── .vscode/
 │   └── launch.json           # VS Codeデバッグ設定
+├── .github/
+│   └── workflows/
+│       └── ci.yml            # GitHub Actions CI/CD
 ├── templates/
 │   └── index.html            # Webインターフェース
 ├── static/
 │   └── style.css             # スタイルシート
-├── models/                   # モデルキャッシュ (自動生成)
-└── README.md                 # このファイル
+├── tests/
+│   ├── test_main.py          # APIエンドポイントのテスト
+│   └── test_translation_service.py  # 翻訳サービスのテスト
+└── models/                   # モデルキャッシュ (自動生成)
 ```
 
 ## 🎨 Webインターフェース
@@ -160,6 +169,58 @@ export HF_ENDPOINT=https://hf-mirror.com
 
 複数のモデルを同時に使用するとメモリを消費します。
 使用しない言語ペアのモデルは削除するか、より多くのメモリを確保してください。
+
+## 🧪 テストの実行
+
+### テスト環境のセットアップ
+
+```bash
+pip install -r requirements-dev.txt
+```
+
+### テストの実行
+
+```bash
+# 全テストを実行
+pytest
+
+# カバレッジ付きで実行
+pytest --cov=. --cov-report=html
+
+# 特定のテストファイルのみ実行
+pytest tests/test_main.py -v
+
+# 詳細な出力で実行
+pytest -v -s
+```
+
+### コードフォーマットとリント
+
+```bash
+# コードフォーマットのチェック
+black --check .
+
+# コードフォーマットの自動修正
+black .
+
+# flake8でリント
+flake8 .
+
+# 型チェック
+mypy main.py translation_service.py
+```
+
+## 🚀 CI/CD
+
+GitHub Actionsによる自動テストとデプロイメントパイプラインを実装しています。
+
+- **自動テスト**: プッシュとプルリクエスト時に自動実行
+- **マルチバージョンテスト**: Python 3.9-3.12でテスト
+- **コードカバレッジ**: Codecovにレポート送信
+- **セキュリティスキャン**: Trivyによる脆弱性チェック
+- **コード品質**: Black、Flake8による自動チェック
+
+ワークフローファイル: [.github/workflows/ci.yml](.github/workflows/ci.yml)
 
 ## 📄 ライセンス
 
