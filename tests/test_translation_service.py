@@ -22,7 +22,7 @@ def test_translation_service_init(translation_service):
 def test_get_supported_languages(translation_service):
     """サポート言語リストの取得テスト"""
     languages = translation_service.get_supported_languages()
-    assert len(languages) > 0
+    assert len(languages) == 9  # Updated to 9 languages including Thai
     assert all("code" in lang for lang in languages)
     assert all("name" in lang for lang in languages)
 
@@ -30,6 +30,7 @@ def test_get_supported_languages(translation_service):
     lang_codes = [lang["code"] for lang in languages]
     assert "en" in lang_codes
     assert "ja" in lang_codes
+    assert "th" in lang_codes  # Check Thai language is included
 
 
 def test_detect_language(translation_service):
@@ -43,6 +44,9 @@ def test_detect_language(translation_service):
 
     # 韓国語
     assert translation_service._detect_language("안녕하세요") == "ko"
+
+    # タイ語
+    assert translation_service._detect_language("สวัสดี") == "th"
 
     # 英語（デフォルト）
     assert translation_service._detect_language("Hello") == "en"

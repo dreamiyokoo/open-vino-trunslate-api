@@ -39,6 +39,8 @@ class TranslationService:
             ("es", "en"): "Helsinki-NLP/opus-mt-es-en",
             ("en", "ru"): "Helsinki-NLP/opus-mt-en-ru",
             ("ru", "en"): "Helsinki-NLP/opus-mt-ru-en",
+            ("en", "th"): "Helsinki-NLP/opus-mt-en-th",
+            ("th", "en"): "Helsinki-NLP/opus-mt-th-en",
         }
 
         # 直接のペアがない場合は、英語を経由
@@ -174,6 +176,9 @@ class TranslationService:
         # 韓国語文字を含む場合
         elif any("\uac00" <= char <= "\ud7a3" for char in text):
             return "ko"
+        # タイ語文字を含む場合
+        elif any("\u0e00" <= char <= "\u0e7f" for char in text):
+            return "th"
         # デフォルトは英語
         else:
             return "en"
@@ -189,4 +194,5 @@ class TranslationService:
             {"code": "de", "name": "German (Deutsch)"},
             {"code": "es", "name": "Spanish (Español)"},
             {"code": "ru", "name": "Russian (Русский)"},
+            {"code": "th", "name": "Thai (ไทย)"},
         ]
