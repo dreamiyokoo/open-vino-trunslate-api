@@ -27,14 +27,14 @@
 
         <!-- タブナビゲーション -->
         <div class="tab-navigation" role="tablist" aria-label="機能選択">
-            <button class="tab-btn active" data-tab="translation" role="tab" 
+            <button class="tab-btn active" data-tab="translation" role="tab"
                     aria-selected="true" aria-controls="translation-tab" id="tab-translation">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M5 12h14M12 5l7 7-7 7"/>
                 </svg>
                 翻訳
             </button>
-            <button class="tab-btn" data-tab="chat" role="tab" 
+            <button class="tab-btn" data-tab="chat" role="tab"
                     aria-selected="false" aria-controls="chat-tab" id="tab-chat">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
@@ -45,7 +45,7 @@
 
         <main class="main-content">
             <!-- 翻訳タブコンテンツ -->
-            <div class="tab-content active" id="translation-tab" role="tabpanel" 
+            <div class="tab-content active" id="translation-tab" role="tabpanel"
                  aria-labelledby="tab-translation">
             <div class="translation-card">
                 <div class="language-selector">
@@ -58,14 +58,14 @@
                             {% endfor %}
                         </select>
                     </div>
-                    
+
                     <button class="swap-btn" id="swap-langs" title="言語を入れ替え">
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M7 16V4M7 4L3 8M7 4L11 8" />
                             <path d="M17 8V20M17 20L21 16M17 20L13 16" />
                         </svg>
                     </button>
-                    
+
                     <div class="lang-option">
                         <label for="target-lang">翻訳先言語</label>
                         <select id="target-lang" class="lang-select">
@@ -78,8 +78,8 @@
 
                 <div class="text-areas">
                     <div class="input-area">
-                        <textarea 
-                            id="source-text" 
+                        <textarea
+                            id="source-text"
                             placeholder="翻訳したいテキストを入力してください..."
                             rows="8"
                         ></textarea>
@@ -142,7 +142,7 @@
             <!-- 翻訳タブコンテンツ終了 -->
 
             <!-- チャットタブコンテンツ -->
-            <div class="tab-content" id="chat-tab" role="tabpanel" 
+            <div class="tab-content" id="chat-tab" role="tabpanel"
                  aria-labelledby="tab-chat">
                 <div class="chat-card">
                     <div class="chat-header">
@@ -163,8 +163,8 @@
 
                     <div class="chat-input-area">
                         <div class="chat-input-wrapper">
-                            <textarea 
-                                id="chat-input" 
+                            <textarea
+                                id="chat-input"
                                 placeholder="メッセージを入力してください..."
                                 rows="2"
                             ></textarea>
@@ -217,7 +217,7 @@
                 btn.setAttribute('aria-selected', 'false');
             });
             tabContents.forEach(content => content.classList.remove('active'));
-            
+
             // 指定されたタブをアクティブに
             const activeButton = document.querySelector(`[data-tab="${tabName}"]`);
             if (activeButton) {
@@ -236,7 +236,7 @@
             // キーボードナビゲーション
             button.addEventListener('keydown', (e) => {
                 let newIndex = index;
-                
+
                 if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
                     e.preventDefault();
                     newIndex = index > 0 ? index - 1 : tabButtons.length - 1;
@@ -250,7 +250,7 @@
                     e.preventDefault();
                     newIndex = tabButtons.length - 1;
                 }
-                
+
                 if (newIndex !== index) {
                     tabButtons[newIndex].focus();
                     const tabName = tabButtons[newIndex].getAttribute('data-tab');
@@ -277,7 +277,7 @@
         sourceText.addEventListener('input', () => {
             const count = sourceText.value.length;
             charCount.textContent = count;
-            
+
             if (count > 5000) {
                 sourceText.value = sourceText.value.substring(0, 5000);
                 charCount.textContent = '5000';
@@ -287,7 +287,7 @@
         // 翻訳実行
         translateBtn.addEventListener('click', async () => {
             const text = sourceText.value.trim();
-            
+
             if (!text) {
                 showError('翻訳するテキストを入力してください');
                 return;
@@ -326,7 +326,7 @@
                 const data = await response.json();
                 translationResult.textContent = data.translated_text;
                 translationResult.classList.add('has-content');
-                
+
                 if (data.via_english) {
                     translationResult.textContent += '\n\n(英語経由で翻訳されました)';
                 }
@@ -365,7 +365,7 @@
         // 言語入れ替え
         swapBtn.addEventListener('click', () => {
             if (sourceLang.value === 'auto') return;
-            
+
             const temp = sourceLang.value;
             sourceLang.value = targetLang.value;
             targetLang.value = temp;
@@ -394,23 +394,23 @@
         const chatMessages = document.getElementById('chat-messages');
         const chatLoading = document.getElementById('chat-loading');
         const chatErrorMessage = document.getElementById('chat-error-message');
-        
+
         let currentSessionId = null;
 
         // メッセージを表示エリアに追加
         function addMessage(content, role) {
             const messageDiv = document.createElement('div');
             messageDiv.className = `chat-message ${role}-message`;
-            
+
             const bubbleDiv = document.createElement('div');
             bubbleDiv.className = 'message-bubble';
             // XSS対策: textContentを使用してHTMLをエスケープ
             // チャットメッセージはプレーンテキストのみ対応（HTML/Markdownは無効）
             bubbleDiv.textContent = content;
-            
+
             messageDiv.appendChild(bubbleDiv);
             chatMessages.appendChild(messageDiv);
-            
+
             // スクロールを最下部に
             chatMessages.scrollTop = chatMessages.scrollHeight;
         }
@@ -427,7 +427,7 @@
         // チャットメッセージ送信
         async function sendChatMessage() {
             const message = chatInput.value.trim();
-            
+
             if (!message) {
                 showChatError('メッセージを入力してください');
                 return;
@@ -460,10 +460,10 @@
                 }
 
                 const data = await response.json();
-                
+
                 // セッションIDを保存
                 currentSessionId = data.session_id;
-                
+
                 // アシスタントの応答を表示
                 addMessage(data.response, 'assistant');
 
@@ -512,14 +512,14 @@
                 showChatError('履歴のクリアに失敗しました');
             }
         });
-        
+
         // チャットメッセージをクリアする関数
         function clearChatMessages() {
             // 既存のメッセージをすべて削除
             while (chatMessages.firstChild) {
                 chatMessages.removeChild(chatMessages.firstChild);
             }
-            
+
             // ウェルカムメッセージを追加
             const welcomeDiv = document.createElement('div');
             welcomeDiv.className = 'welcome-message';

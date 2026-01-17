@@ -68,9 +68,7 @@ def test_get_model_name(translation_service):
 
 def test_same_language_translation(translation_service):
     """同じ言語への翻訳テスト"""
-    result = translation_service.translate(
-        text="Hello", target_lang="en", source_lang="en"
-    )
+    result = translation_service.translate(text="Hello", target_lang="en", source_lang="en")
 
     assert result["translated_text"] == "Hello"
     assert result["source_lang"] == "en"
@@ -80,9 +78,7 @@ def test_same_language_translation(translation_service):
 
 def test_translation_result_structure(translation_service):
     """翻訳結果の構造テスト"""
-    result = translation_service.translate(
-        text="Test", target_lang="ja", source_lang="en"
-    )
+    result = translation_service.translate(text="Test", target_lang="ja", source_lang="en")
 
     # 基本的なキーが存在するか確認（original_textは常に含まれる）
     assert "original_text" in result

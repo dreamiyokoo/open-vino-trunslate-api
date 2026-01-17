@@ -2,14 +2,15 @@
 OpenVINO翻訳API - FastAPIアプリケーション
 """
 
+import threading
+import logging
+import uvicorn
+from typing import Optional, List, Dict
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
-from typing import Optional, List, Dict
-import uvicorn
-import logging
 from translation_service import TranslationService
 from chat_service import ChatService
 
@@ -30,7 +31,7 @@ templates = Jinja2Templates(directory="templates")
 translation_service = TranslationService()
 
 # チャットサービスの初期化（遅延ロード、スレッドセーフ）
-import threading
+
 chat_service = None
 chat_service_lock = threading.Lock()
 
@@ -38,13 +39,13 @@ chat_service_lock = threading.Lock()
 def get_chat_service():
     """チャットサービスのインスタンスを取得（遅延ロード、スレッドセーフ）"""
     global chat_service
-    
+
     if chat_service is None:
         with chat_service_lock:
             # ダブルチェックロッキングパターン
             if chat_service is None:
                 chat_service = ChatService()
-    
+
     return chat_service
 
 
@@ -114,9 +115,7 @@ class ChatHistoryResponse(BaseModel):
 async def read_root(request: Request):
     """翻訳Webインターフェースを表示"""
     languages = translation_service.get_supported_languages()
-    return templates.TemplateResponse(
-        "index.html", {"request": request, "languages": languages}
-    )
+    return templates.TemplateResponse("index.html", {"request": request, "languages": languages})
 
 
 # 翻訳API エンドポイント
@@ -174,12 +173,12 @@ async def chat(request: ChatRequest):
     # メッセージの検証
     if not request.message or not request.message.strip():
         raise HTTPException(status_code=400, detail="Message cannot be empty")
-    
+
     # セッションIDの検証（提供されている場合）
     if request.session_id:
         if len(request.session_id) > 100:
             raise HTTPException(status_code=400, detail="Session ID is too long")
-    
+
     service = get_chat_service()
 
     # チャット応答を生成

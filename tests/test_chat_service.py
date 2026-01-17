@@ -34,9 +34,7 @@ class TestChatService:
 
         # モックの設定
         mock_model_instance = MagicMock()
-        mock_model_instance.generate = MagicMock(
-            return_value=[[1, 2, 3, 4, 5]]  # ダミートークン
-        )
+        mock_model_instance.generate = MagicMock(return_value=[[1, 2, 3, 4, 5]])  # ダミートークン
         mock_model.from_pretrained = MagicMock(return_value=mock_model_instance)
 
         mock_tokenizer_instance = MagicMock()
@@ -45,9 +43,7 @@ class TestChatService:
         mock_tokenizer_instance.eos_token_id = 1
         mock_tokenizer_instance.return_value = {"input_ids": MagicMock(shape=(1, 3))}
         mock_tokenizer_instance.decode = MagicMock(return_value="こんにちは！")
-        mock_tokenizer.from_pretrained = MagicMock(
-            return_value=mock_tokenizer_instance
-        )
+        mock_tokenizer.from_pretrained = MagicMock(return_value=mock_tokenizer_instance)
 
         service = ChatService()
         service.tokenizer = mock_tokenizer_instance
@@ -67,9 +63,7 @@ class TestChatService:
 
         # モックの設定
         mock_model_instance = MagicMock()
-        mock_model_instance.generate = MagicMock(
-            return_value=[[1, 2, 3, 4, 5]]  # ダミートークン
-        )
+        mock_model_instance.generate = MagicMock(return_value=[[1, 2, 3, 4, 5]])  # ダミートークン
         mock_model.from_pretrained = MagicMock(return_value=mock_model_instance)
 
         mock_tokenizer_instance = MagicMock()
@@ -78,9 +72,7 @@ class TestChatService:
         mock_tokenizer_instance.eos_token_id = 1
         mock_tokenizer_instance.return_value = {"input_ids": MagicMock(shape=(1, 3))}
         mock_tokenizer_instance.decode = MagicMock(return_value="応答です")
-        mock_tokenizer.from_pretrained = MagicMock(
-            return_value=mock_tokenizer_instance
-        )
+        mock_tokenizer.from_pretrained = MagicMock(return_value=mock_tokenizer_instance)
 
         service = ChatService()
         service.tokenizer = mock_tokenizer_instance
@@ -107,9 +99,7 @@ class TestChatService:
         mock_tokenizer_instance.pad_token = None
         mock_tokenizer_instance.eos_token = "<eos>"
         mock_model.from_pretrained = MagicMock(return_value=mock_model_instance)
-        mock_tokenizer.from_pretrained = MagicMock(
-            return_value=mock_tokenizer_instance
-        )
+        mock_tokenizer.from_pretrained = MagicMock(return_value=mock_tokenizer_instance)
 
         service = ChatService()
 
@@ -147,9 +137,7 @@ class TestChatService:
         mock_tokenizer_instance.pad_token = None
         mock_tokenizer_instance.eos_token = "<eos>"
         mock_model.from_pretrained = MagicMock(return_value=mock_model_instance)
-        mock_tokenizer.from_pretrained = MagicMock(
-            return_value=mock_tokenizer_instance
-        )
+        mock_tokenizer.from_pretrained = MagicMock(return_value=mock_tokenizer_instance)
 
         service = ChatService()
         result = service.get_history("non-existent-session")
@@ -168,9 +156,7 @@ class TestChatService:
         mock_tokenizer_instance.pad_token = None
         mock_tokenizer_instance.eos_token = "<eos>"
         mock_model.from_pretrained = MagicMock(return_value=mock_model_instance)
-        mock_tokenizer.from_pretrained = MagicMock(
-            return_value=mock_tokenizer_instance
-        )
+        mock_tokenizer.from_pretrained = MagicMock(return_value=mock_tokenizer_instance)
 
         service = ChatService()
 
@@ -200,9 +186,7 @@ class TestChatService:
         mock_tokenizer_instance.pad_token = None
         mock_tokenizer_instance.eos_token = "<eos>"
         mock_model.from_pretrained = MagicMock(return_value=mock_model_instance)
-        mock_tokenizer.from_pretrained = MagicMock(
-            return_value=mock_tokenizer_instance
-        )
+        mock_tokenizer.from_pretrained = MagicMock(return_value=mock_tokenizer_instance)
 
         service = ChatService()
 

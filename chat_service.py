@@ -66,15 +66,11 @@ class ChatService:
             # モデルが既にエクスポートされているか確認
             if not model_path.exists():
                 logger.info("Exporting chat model to OpenVINO format...")
-                self.model = OVModelForCausalLM.from_pretrained(
-                    self.model_name, export=True, compile=True
-                )
+                self.model = OVModelForCausalLM.from_pretrained(self.model_name, export=True, compile=True)
                 self.model.save_pretrained(model_path)
             else:
                 logger.info("Loading cached OpenVINO chat model...")
-                self.model = OVModelForCausalLM.from_pretrained(
-                    model_path, compile=True
-                )
+                self.model = OVModelForCausalLM.from_pretrained(model_path, compile=True)
 
             self.tokenizer = AutoTokenizer.from_pretrained(self.model_name)
 
@@ -88,9 +84,7 @@ class ChatService:
             logger.error(f"Error loading chat model {self.model_name}: {e}")
             raise
 
-    def _format_prompt(
-        self, messages: List[Dict[str, str]], system_prompt: Optional[str] = None
-    ) -> str:
+    def _format_prompt(self, messages: List[Dict[str, str]], system_prompt: Optional[str] = None) -> str:
         """
         チャット履歴をプロンプト形式にフォーマット
 
@@ -135,9 +129,7 @@ class ChatService:
         """
         try:
             # トークナイズ
-            inputs = self.tokenizer(
-                prompt, return_tensors="pt", padding=True, truncation=True
-            )
+            inputs = self.tokenizer(prompt, return_tensors="pt", padding=True, truncation=True)
 
             # 生成
             outputs = self.model.generate(
@@ -150,9 +142,7 @@ class ChatService:
             )
 
             # デコード（入力部分を除外）
-            generated_text = self.tokenizer.decode(
-                outputs[0][inputs["input_ids"].shape[1] :], skip_special_tokens=True
-            )
+            generated_text = self.tokenizer.decode(outputs[0][inputs["input_ids"].shape[1] :], skip_special_tokens=True)
 
             return generated_text.strip()
 
@@ -165,23 +155,20 @@ class ChatService:
         with self.sessions_lock:
             current_time = datetime.now()
             expired_sessions = []
-            
+
             for session_id, session in self.sessions.items():
                 last_access = session.get("last_access", session["created_at"])
                 if current_time - last_access > self.session_timeout:
                     expired_sessions.append(session_id)
-            
+
             for session_id in expired_sessions:
                 del self.sessions[session_id]
                 logger.info(f"Cleaned up expired session: {session_id}")
-            
+
             # セッション数が最大値を超えている場合、最も古いセッションを削除
             if len(self.sessions) > self.max_sessions:
                 # 最終アクセス時刻でソート
-                sorted_sessions = sorted(
-                    self.sessions.items(),
-                    key=lambda x: x[1].get("last_access", x[1]["created_at"])
-                )
+                sorted_sessions = sorted(self.sessions.items(), key=lambda x: x[1].get("last_access", x[1]["created_at"]))
                 # 古いセッションを削除
                 num_to_remove = len(self.sessions) - self.max_sessions
                 for i in range(num_to_remove):
@@ -209,25 +196,24 @@ class ChatService:
         try:
             # 古いセッションをクリーンアップ
             self._cleanup_old_sessions()
-            
+
             with self.sessions_lock:
                 # セッションIDの処理
                 if session_id is None or session_id not in self.sessions:
                     session_id = str(uuid.uuid4())
                     self.sessions[session_id] = {
                         "messages": [],
-                        "system_prompt": system_prompt
-                        or "You are a helpful assistant.",
+                        "system_prompt": system_prompt or "You are a helpful assistant.",
                         "created_at": datetime.now(),
                         "last_access": datetime.now(),
                     }
                 elif system_prompt:
                     # 既存セッションのシステムプロンプトを更新
                     self.sessions[session_id]["system_prompt"] = system_prompt
-                
+
                 # 最終アクセス時刻を更新
                 self.sessions[session_id]["last_access"] = datetime.now()
-                
+
                 session = self.sessions[session_id]
 
                 # ユーザーメッセージを追加
@@ -237,17 +223,14 @@ class ChatService:
                     "timestamp": datetime.now().isoformat(),
                 }
                 session["messages"].append(user_message)
-                
+
                 # メッセージ履歴を制限
                 if len(session["messages"]) > self.max_history_messages * 2:
                     # 古いメッセージを削除（ペアで削除して会話の整合性を保つ）
-                    session["messages"] = session["messages"][-(self.max_history_messages * 2):]
+                    session["messages"] = session["messages"][-(self.max_history_messages * 2) :]
 
                 # プロンプトをフォーマット（ロック外で実行）
-                prompt = self._format_prompt(
-                    session["messages"][:],  # コピーを作成
-                    session["system_prompt"]
-                )
+                prompt = self._format_prompt(session["messages"][:], session["system_prompt"])  # コピーを作成
 
             # 応答を生成（ロック外で実行 - 時間がかかる処理）
             response_text = self._generate_response(prompt)
@@ -288,7 +271,7 @@ class ChatService:
             session = self.sessions[session_id]
             # 最終アクセス時刻を更新
             session["last_access"] = datetime.now()
-            
+
             return {
                 "session_id": session_id,
                 "messages": session["messages"][:],  # コピーを返す
@@ -324,7 +307,7 @@ class ChatService:
             sessions_info = []
             # 辞書のコピーを作成してから反復
             sessions_copy = dict(self.sessions)
-            
+
             for sid, session in sessions_copy.items():
                 sessions_info.append(
                     {

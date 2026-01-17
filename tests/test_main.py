@@ -52,9 +52,7 @@ def test_translate_missing_text(client):
 
 def test_translate_invalid_language(client):
     """無効な言語コードのテスト"""
-    response = client.post(
-        "/api/translate", json={"text": "Hello", "target_lang": "invalid_lang"}
-    )
+    response = client.post("/api/translate", json={"text": "Hello", "target_lang": "invalid_lang"})
     # サービスによっては400か翻訳結果のエラーが返る
     assert response.status_code in [400, 200]
 
@@ -139,4 +137,3 @@ def test_list_chat_sessions(client):
         data = response.json()
         assert "sessions" in data
         assert "total" in data
-

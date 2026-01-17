@@ -1,0 +1,26 @@
+[flake8]
+max-line-length = 127
+max-complexity = 10
+exclude =
+    .git,
+    __pycache__,
+    venv,
+    .venv,
+    models,
+    .pytest_cache,
+    build,
+    dist
+ignore =
+    # Whitespace before ':'
+    E203,
+    # Line too long (handled by black)
+    E501,
+    # Line break before binary operator (black compatibility)
+    W503,
+    # Line break after binary operator
+    W504,
+    # Docstring checks (too strict for this project)
+    D100, D101, D102, D103, D104, D105, D106, D107,
+    D200, D202, D203, D205, D212, D400, D401, D403, D415
+per-file-ignores =
+    __init__.py:F401

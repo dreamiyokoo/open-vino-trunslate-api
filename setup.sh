@@ -48,6 +48,23 @@ echo "📦 依存パッケージをインストールしています..."
 echo "⚠️  これには時間がかかる場合があります（初回は10-30分程度）"
 pip install -r requirements.txt
 
+# 開発環境のセットアップ（オプション）
+echo ""
+read -p "開発環境（テスト、lint、pre-commit等）もインストールしますか？ (y/N): " -n 1 -r
+echo
+if [[ $REPLY =~ ^[Yy]$ ]]; then
+    echo "📦 開発用パッケージをインストールしています..."
+    pip install -r requirements-dev.txt
+
+    echo "🪝 Pre-commitフックをセットアップしています..."
+    pre-commit install
+
+    echo "✓ 開発環境のセットアップが完了しました"
+    echo ""
+    echo "Pre-commitフックが有効化されました。"
+    echo "コミット時に自動的にlintチェックが実行されます。"
+fi
+
 # インストール結果を確認
 if [ $? -eq 0 ]; then
     echo ""

@@ -291,6 +291,38 @@ flake8 .
 mypy main.py translation_service.py
 ```
 
+### Pre-commitフックの使用（推奨）
+
+Pre-commitフックを使用すると、コミット前に自動的にCIと同じlintチェックを実行できます。
+
+```bash
+# pre-commitのインストール（初回のみ）
+pip install pre-commit
+
+# pre-commitフックを有効化
+pre-commit install
+
+# 手動で全ファイルをチェック
+pre-commit run --all-files
+
+# 特定のフックのみ実行
+pre-commit run black --all-files
+pre-commit run flake8 --all-files
+```
+
+**有効化後は、`git commit`時に自動的に以下がチェックされます:**
+- ✅ Black（コードフォーマット）
+- ✅ Flake8（Lintチェック）
+- ✅ Mypy（型チェック）
+- ✅ Bandit（セキュリティチェック）
+- ✅ 一般的なファイルチェック（trailing whitespace等）
+
+**チェックに失敗した場合:**
+- 自動修正可能な問題は自動的に修正されます
+- 再度コミットを試みてください
+- 手動修正が必要な問題はメッセージに表示されます
+
+
 ## 🚀 CI/CD
 
 GitHub Actionsによる自動テストとデプロイメントパイプラインを実装しています。
