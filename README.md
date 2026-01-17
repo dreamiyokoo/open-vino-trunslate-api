@@ -1,11 +1,13 @@
-# OpenVINO Translation API
+# OpenVINO Translation & Chat API
 
-OpenVINOを使った高速AI翻訳WebサービスとAPI
+OpenVINOを使った高速AI翻訳WebサービスとチャットAPI
 
 ## 🚀 特徴
 
 - **OpenVINO最適化**: Intel OpenVINOによる高速推論
-- **多言語対応**: 英語、日本語、中国語、韓国語、フランス語、ドイツ語、スペイン語、ロシア語、タイ語
+- **多言語翻訳対応**: 英語、日本語、中国語、韓国語、フランス語、ドイツ語、スペイン語、ロシア語、タイ語
+- **AIチャット機能**: OpenVINO対応の軽量LLMを使用したチャット機能
+- **統合UI**: 翻訳とチャットを切り替えられるタブインターフェース
 - **自動言語検出**: 入力言語を自動で検出
 - **REST API**: プログラマティックなアクセス用のAPI
 - **モダンUI**: レスポンシブでモダンなWebインターフェース
@@ -75,6 +77,51 @@ Content-Type: application/json
 }
 ```
 
+### チャットエンドポイント
+
+#### チャットメッセージ送信
+
+```bash
+POST /api/chat
+Content-Type: application/json
+
+{
+  "message": "こんにちは",
+  "session_id": "optional-session-id",
+  "system_prompt": "あなたは親切なアシスタントです",
+  "translate_to": "en"  // オプション: 応答を翻訳
+}
+```
+
+#### レスポンス例
+
+```json
+{
+  "response": "こんにちは！どのようにお手伝いできますか？",
+  "session_id": "generated-or-provided-id",
+  "timestamp": "2026-01-17T12:00:00Z",
+  "translated_response": "Hello! How can I help you?"
+}
+```
+
+#### チャット履歴の取得
+
+```bash
+GET /api/chat/history/{session_id}
+```
+
+#### チャット履歴の削除
+
+```bash
+DELETE /api/chat/history/{session_id}
+```
+
+#### アクティブセッション一覧
+
+```bash
+GET /api/chat/sessions
+```
+
 ### サポート言語の取得
 
 ```bash
@@ -105,8 +152,9 @@ GET /api/health
 
 ```
 open-vino-trunslate-api/
-├── main.py                    # FastAPIアプリケーション
+├── main.py                    # FastAPIアプリケーション（翻訳＋チャット）
 ├── translation_service.py     # OpenVINO翻訳サービス
+├── chat_service.py            # OpenVINOチャットサービス（新規）
 ├── requirements.txt           # 依存パッケージ
 ├── requirements-dev.txt       # 開発用パッケージ
 ├── pytest.ini                 # pytestの設定
@@ -118,22 +166,32 @@ open-vino-trunslate-api/
 │   └── workflows/
 │       └── ci.yml            # GitHub Actions CI/CD
 ├── templates/
-│   └── index.html            # Webインターフェース
+│   └── index.html            # 統合Webインターフェース（翻訳＋チャット）
 ├── static/
 │   └── style.css             # スタイルシート
 ├── tests/
 │   ├── test_main.py          # APIエンドポイントのテスト
-│   └── test_translation_service.py  # 翻訳サービスのテスト
+│   ├── test_translation_service.py  # 翻訳サービスのテスト
+│   └── test_chat_service.py  # チャットサービスのテスト（新規）
 └── models/                   # モデルキャッシュ (自動生成)
+    ├── Helsinki-NLP_opus-mt-*  # 翻訳モデル
+    └── chat_llm/             # チャット用LLMモデル（新規）
 ```
 
 ## 🎨 Webインターフェース
 
 モダンで直感的なUIを提供:
 
-- **自動言語検出**: 入力言語を自動で判定
-- **リアルタイム翻訳**: ボタンクリックで即座に翻訳
-- **コピー機能**: 翻訳結果をワンクリックでコピー
+- **タブ切り替え**: 翻訳とチャット機能を簡単に切り替え
+- **翻訳機能**:
+  - 自動言語検出
+  - リアルタイム翻訳
+  - コピー機能
+- **チャット機能**:
+  - AIとの対話形式のチャット
+  - 会話履歴の保持
+  - セッション管理
+  - チャットバブル形式の表示
 - **レスポンシブデザイン**: PC・タブレット・スマホに対応
 - **アニメーション**: スムーズなUIアニメーション
 
@@ -146,6 +204,28 @@ open-vino-trunslate-api/
 ```python
 service = TranslationService(cache_dir="./custom_models")
 ```
+
+### チャット用LLMモデルの変更
+
+`chat_service.py`の`ChatService`クラスでモデルを指定可能:
+
+```python
+service = ChatService(
+    model_name="TinyLlama/TinyLlama-1.1B-Chat-v1.0",
+    cache_dir="./models/chat_llm"
+)
+```
+
+#### サポートされているLLMモデル
+
+| モデル | サイズ | 特徴 | 推奨度 |
+|--------|--------|------|--------|
+| TinyLlama-1.1B-Chat-v1.0 | 1.1B | 軽量、英語メイン（デフォルト） | ⭐⭐⭐ |
+| Phi-2 | 2.7B | Microsoft製、高品質、英語 | ⭐⭐⭐⭐ |
+| rinna/japanese-gpt-neox-small | 3.6B | 日本語特化 | ⭐⭐⭐⭐ |
+| Qwen1.5-1.8B | 1.8B | 多言語対応 | ⭐⭐⭐ |
+
+**注意**: モデルを変更する場合は、そのモデルのプロンプトフォーマットに合わせて`_format_prompt`メソッドを調整する必要があります。
 
 ### ポート番号の変更
 
