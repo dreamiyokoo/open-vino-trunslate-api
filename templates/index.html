@@ -124,7 +124,7 @@
 
                 <div id="error-message" class="error-message hidden"></div>
                 </div>
-                
+
                 <div style="margin-top: 1.5rem; text-align: center; padding: 0.5rem;">
                     <small style="color: rgba(255, 255, 255, 0.6);">
                         📚 <a href="/docs" target="_blank" style="color: rgba(255, 255, 255, 0.8); text-decoration: none;">APIドキュメント</a>
@@ -183,7 +183,7 @@
                         <div id="chat-error-message" class="error-message hidden"></div>
                     </div>
                 </div>
-                
+
                 <div style="margin-top: 1.5rem; text-align: center; padding: 0.5rem;">
                     <small style="color: rgba(255, 255, 255, 0.6);">
                         📚 <a href="/docs" target="_blank" style="color: rgba(255, 255, 255, 0.8); text-decoration: none;">APIドキュメント</a>
@@ -400,10 +400,10 @@
                 if (!response.ok) {
                     throw new Error('モデル一覧の取得に失敗しました');
                 }
-                
+
                 const data = await response.json();
                 availableModels = data.models;
-                
+
                 // ドロップダウンを更新
                 chatModelSelect.innerHTML = '';
                 availableModels.forEach(model => {
@@ -415,10 +415,10 @@
                     }
                     chatModelSelect.appendChild(option);
                 });
-                
+
                 // 現在のモデル情報を表示
                 updateModelInfo();
-                
+
             } catch (error) {
                 console.error('モデル読み込みエラー:', error);
                 chatModelSelect.innerHTML = '<option value="">エラー: モデルを読み込めません</option>';

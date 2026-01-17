@@ -167,6 +167,41 @@ async def health_check():
 # ========== Chat API エンドポイント ==========
 
 
+def _validate_chat_request(request: ChatRequest) -> None:
+    """チャットリクエストの検証"""
+    if not request.message or not request.message.strip():
+        raise HTTPException(status_code=400, detail="Message cannot be empty")
+    if request.session_id and len(request.session_id) > 100:
+        raise HTTPException(status_code=400, detail="Session ID is too long")
+
+
+def _resolve_model_name(model_key: Optional[str]) -> Optional[str]:
+    """モデルキーからHugging Face名を解決"""
+    if not model_key:
+        return None
+    try:
+        return config.get_model_name(model_key)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+def _translate_response(response_text: str, target_lang: str) -> Optional[str]:
+    """応答を翻訳"""
+    try:
+        translation_result = translation_service.translate(
+            text=response_text,
+            target_lang=target_lang,
+            source_lang=None,
+        )
+        if "error" not in translation_result:
+            return translation_result["translated_text"]
+        else:
+            logger.warning(f"Translation failed: {translation_result['error']}")
+    except Exception as e:
+        logger.error(f"Translation error: {e}")
+    return None
+
+
 @app.post("/api/chat", response_model=ChatResponse)
 async def chat(request: ChatRequest):
     """
@@ -178,26 +213,10 @@ async def chat(request: ChatRequest):
     - **model**: 使用するモデル (オプション、例: "tinyllama", "japanese-gpt-neox")
     - **translate_to**: 応答を翻訳する言語コード (オプション)
     """
-    # メッセージの検証
-    if not request.message or not request.message.strip():
-        raise HTTPException(status_code=400, detail="Message cannot be empty")
-
-    # セッションIDの検証（提供されている場合）
-    if request.session_id:
-        if len(request.session_id) > 100:
-            raise HTTPException(status_code=400, detail="Session ID is too long")
-
+    _validate_chat_request(request)
     service = get_chat_service()
+    model_name = _resolve_model_name(request.model)
 
-    # モデル名の解決（キーからHugging Face名へ）
-    model_name = None
-    if request.model:
-        try:
-            model_name = config.get_model_name(request.model)
-        except ValueError as e:
-            raise HTTPException(status_code=400, detail=str(e))
-
-    # チャット応答を生成
     result = service.chat(
         message=request.message.strip(),
         session_id=request.session_id,
@@ -208,21 +227,9 @@ async def chat(request: ChatRequest):
     if "error" in result:
         raise HTTPException(status_code=400, detail=result["error"])
 
-    # 翻訳が要求された場合
     translated_response = None
     if request.translate_to:
-        try:
-            translation_result = translation_service.translate(
-                text=result["response"],
-                target_lang=request.translate_to,
-                source_lang=None,  # 自動検出
-            )
-            if "error" not in translation_result:
-                translated_response = translation_result["translated_text"]
-            else:
-                logger.warning(f"Translation failed: {translation_result['error']}")
-        except Exception as e:
-            logger.error(f"Translation error: {e}")
+        translated_response = _translate_response(result["response"], request.translate_to)
 
     return ChatResponse(
         response=result["response"],

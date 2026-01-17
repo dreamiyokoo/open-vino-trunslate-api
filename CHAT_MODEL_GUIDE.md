@@ -49,23 +49,23 @@ def get_chat_service():
 ```python
 def _format_prompt(self, messages: List[Dict[str, str]], system_prompt: Optional[str] = None) -> str:
     """モデルに応じてフォーマットを変更"""
-    
+
     # rinnaモデルの場合
     if "rinna" in self.model_name.lower():
         # rinnaモデル用のフォーマット
         formatted = []
         if system_prompt:
             formatted.append(f"システム: {system_prompt}\n")
-        
+
         for msg in messages:
             if msg["role"] == "user":
                 formatted.append(f"ユーザー: {msg['content']}\n")
             elif msg["role"] == "assistant":
                 formatted.append(f"アシスタント: {msg['content']}\n")
-        
+
         formatted.append("アシスタント: ")
         return "".join(formatted)
-    
+
     # TinyLlama等のデフォルト
     else:
         # 既存のフォーマット
@@ -98,18 +98,18 @@ python main.py
 def chat_with_translation(self, message: str, session_id: Optional[str] = None):
     """日本語メッセージを翻訳してから処理"""
     from translation_service import TranslationService
-    
+
     translator = TranslationService()
-    
+
     # 1. 日本語→英語
     english_message = translator.translate(message, target_lang="en", source_lang="ja")["translated_text"]
-    
+
     # 2. 英語でチャット
     response = self.chat(english_message, session_id)
-    
+
     # 3. 英語→日本語
     japanese_response = translator.translate(response["response"], target_lang="ja", source_lang="en")["translated_text"]
-    
+
     response["response"] = japanese_response
     return response
 ```

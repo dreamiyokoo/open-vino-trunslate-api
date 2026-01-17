@@ -109,7 +109,62 @@ class ChatService:
         with self.models_lock:
             return list(self.models.keys())
 
-    def _format_prompt(self, messages: List[Dict[str, str]], system_prompt: Optional[str] = None, model_name: str = None) -> str:
+    def _format_qwen_prompt(self, messages: List[Dict[str, str]], system_prompt: Optional[str] = None) -> str:
+        """Qwen2.5のチャット形式にフォーマット"""
+        formatted_parts = []
+        if system_prompt:
+            formatted_parts.append(f"<|im_start|>system\n{system_prompt}<|im_end|>")
+
+        for msg in messages:
+            role = msg["role"]
+            content = msg["content"]
+            if role == "user":
+                formatted_parts.append(f"<|im_start|>user\n{content}<|im_end|>")
+            elif role == "assistant":
+                formatted_parts.append(f"<|im_start|>assistant\n{content}<|im_end|>")
+
+        formatted_parts.append("<|im_start|>assistant\n")
+        return "\n".join(formatted_parts)
+
+    def _format_tinyllama_prompt(self, messages: List[Dict[str, str]], system_prompt: Optional[str] = None) -> str:
+        """TinyLlamaのチャット形式にフォーマット"""
+        formatted_parts = []
+        if system_prompt:
+            formatted_parts.append(f"<|system|>\n{system_prompt}</s>")
+
+        for msg in messages:
+            role = msg["role"]
+            content = msg["content"]
+            if role == "user":
+                formatted_parts.append(f"<|user|>\n{content}</s>")
+            elif role == "assistant":
+                formatted_parts.append(f"<|assistant|>\n{content}</s>")
+
+        formatted_parts.append("<|assistant|>")
+        return "\n".join(formatted_parts)
+
+    def _format_simple_prompt(self, messages: List[Dict[str, str]], system_prompt: Optional[str] = None) -> str:
+        """日本語モデル用のシンプルな形式にフォーマット"""
+        formatted_parts = []
+        if system_prompt:
+            formatted_parts.append(f"指示: {system_prompt}")
+
+        # 会話履歴を追加（最後のいくつかのみ）
+        recent_messages = messages[-4:] if len(messages) > 4 else messages
+        for msg in recent_messages:
+            role = msg["role"]
+            content = msg["content"]
+            if role == "user":
+                formatted_parts.append(f"質問: {content}")
+            elif role == "assistant":
+                formatted_parts.append(f"回答: {content}")
+
+        formatted_parts.append("回答:")
+        return "\n".join(formatted_parts)
+
+    def _format_prompt(
+        self, messages: List[Dict[str, str]], system_prompt: Optional[str] = None, model_name: str = None
+    ) -> str:
         """
         チャット履歴をプロンプト形式にフォーマット
 
@@ -121,61 +176,12 @@ class ChatService:
         Returns:
             フォーマットされたプロンプト文字列
         """
-        # モデルに応じてフォーマットを変更
         if model_name and "Qwen" in model_name:
-            # Qwen2.5のチャット形式
-            formatted_parts = []
-            
-            if system_prompt:
-                formatted_parts.append(f"<|im_start|>system\n{system_prompt}<|im_end|>")
-            
-            for msg in messages:
-                role = msg["role"]
-                content = msg["content"]
-                if role == "user":
-                    formatted_parts.append(f"<|im_start|>user\n{content}<|im_end|>")
-                elif role == "assistant":
-                    formatted_parts.append(f"<|im_start|>assistant\n{content}<|im_end|>")
-            
-            formatted_parts.append("<|im_start|>assistant\n")
-            return "\n".join(formatted_parts)
-            
+            return self._format_qwen_prompt(messages, system_prompt)
         elif model_name and "TinyLlama" in model_name:
-            # TinyLlamaのチャット形式
-            formatted_parts = []
-            if system_prompt:
-                formatted_parts.append(f"<|system|>\n{system_prompt}</s>")
-            
-            for msg in messages:
-                role = msg["role"]
-                content = msg["content"]
-                if role == "user":
-                    formatted_parts.append(f"<|user|>\n{content}</s>")
-                elif role == "assistant":
-                    formatted_parts.append(f"<|assistant|>\n{content}</s>")
-            
-            formatted_parts.append("<|assistant|>")
-            return "\n".join(formatted_parts)
+            return self._format_tinyllama_prompt(messages, system_prompt)
         else:
-            # 日本語モデル用のシンプルな形式
-            formatted_parts = []
-            
-            if system_prompt:
-                formatted_parts.append(f"指示: {system_prompt}")
-            
-            # 会話履歴を追加（最後のいくつかのみ）
-            recent_messages = messages[-4:] if len(messages) > 4 else messages
-            for msg in recent_messages:
-                role = msg["role"]
-                content = msg["content"]
-                if role == "user":
-                    formatted_parts.append(f"質問: {content}")
-                elif role == "assistant":
-                    formatted_parts.append(f"回答: {content}")
-            
-            # 最後の応答を促す
-            formatted_parts.append("回答:")
-            return "\n".join(formatted_parts)
+            return self._format_simple_prompt(messages, system_prompt)
 
     def _generate_response(self, prompt: str, model_name: str, max_new_tokens: int = 256) -> str:
         """
@@ -191,7 +197,7 @@ class ChatService:
         """
         # デバッグ用にプロンプトをログ出力
         logger.info(f"=== Prompt for model {model_name} ===\n{prompt}\n=== End Prompt ===")
-        
+
         # モックモードの場合
         if self.use_mock:
             return self._generate_mock_response(prompt)
@@ -226,7 +232,7 @@ class ChatService:
             input_length = inputs["input_ids"].shape[1]
             generated_tokens = outputs[0][input_length:]
             generated_text = tokenizer.decode(generated_tokens, skip_special_tokens=True)
-            
+
             # デバッグ: 生成された生テキストをログ出力
             logger.info(f"=== Raw generated text ===\n{generated_text}\n=== End Raw ===")
 
@@ -252,7 +258,7 @@ class ChatService:
             # 空の応答の場合のフォールバック
             if not generated_text:
                 generated_text = "申し訳ありませんが、応答を生成できませんでした。"
-            
+
             logger.info(f"=== Final response ===\n{generated_text}\n=== End Final ===")
 
             return generated_text
@@ -392,9 +398,7 @@ class ChatService:
                     session["messages"] = session["messages"][-(self.max_history_messages * 2) :]
 
                 # プロンプトをフォーマット（ロック外で実行）
-                prompt = self._format_prompt(
-                    session["messages"][:], session["system_prompt"], model_name=used_model
-                )  # コピーを作成
+                prompt = self._format_prompt(session["messages"][:], session["system_prompt"], model_name=used_model)  # コピーを作成
 
             # 応答を生成（ロック外で実行 - 時間がかかる処理）
             response_text = self._generate_response(prompt, used_model)
