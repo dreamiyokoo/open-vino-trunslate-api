@@ -9,8 +9,11 @@ from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 from typing import Optional, List, Dict
 import uvicorn
+import logging
 from translation_service import TranslationService
 from chat_service import ChatService
+
+logger = logging.getLogger(__name__)
 
 # FastAPIアプリケーションの初期化
 app = FastAPI(
@@ -27,18 +30,14 @@ templates = Jinja2Templates(directory="templates")
 translation_service = TranslationService()
 
 # チャットサービスの初期化（遅延ロード、スレッドセーフ）
+import threading
 chat_service = None
-chat_service_lock = None
+chat_service_lock = threading.Lock()
 
 
 def get_chat_service():
     """チャットサービスのインスタンスを取得（遅延ロード、スレッドセーフ）"""
-    global chat_service, chat_service_lock
-    
-    # ロックの初期化（最初の呼び出し時のみ）
-    if chat_service_lock is None:
-        import threading
-        chat_service_lock = threading.Lock()
+    global chat_service
     
     if chat_service is None:
         with chat_service_lock:
@@ -169,14 +168,23 @@ async def chat(request: ChatRequest):
     - **message**: ユーザーメッセージ
     - **session_id**: セッションID (オプション、指定しない場合は新規作成)
     - **system_prompt**: システムプロンプト (オプション)
-    - **use_langchain**: LangChainを使用するか (オプション、将来の拡張用)
+    - **use_langchain**: LangChainを使用するか (現在未実装、将来の拡張用として予約)
     - **translate_to**: 応答を翻訳する言語コード (オプション)
     """
+    # メッセージの検証
+    if not request.message or not request.message.strip():
+        raise HTTPException(status_code=400, detail="Message cannot be empty")
+    
+    # セッションIDの検証（提供されている場合）
+    if request.session_id:
+        if len(request.session_id) > 100:
+            raise HTTPException(status_code=400, detail="Session ID is too long")
+    
     service = get_chat_service()
 
     # チャット応答を生成
     result = service.chat(
-        message=request.message,
+        message=request.message.strip(),
         session_id=request.session_id,
         system_prompt=request.system_prompt,
     )
@@ -186,6 +194,7 @@ async def chat(request: ChatRequest):
 
     # 翻訳が要求された場合
     translated_response = None
+    translation_error = None
     if request.translate_to:
         try:
             translation_result = translation_service.translate(
@@ -195,9 +204,12 @@ async def chat(request: ChatRequest):
             )
             if "error" not in translation_result:
                 translated_response = translation_result["translated_text"]
+            else:
+                translation_error = translation_result["error"]
+                logger.warning(f"Translation failed: {translation_error}")
         except Exception as e:
-            # 翻訳エラーは無視して続行
-            pass
+            translation_error = str(e)
+            logger.error(f"Translation error: {e}")
 
     return ChatResponse(
         response=result["response"],

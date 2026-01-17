@@ -41,24 +41,37 @@ class OpenVINOChatLangChain(LLM):
     ChatServiceをLangChainのLLMインターフェースでラップし、
     LangChainのエコシステムで利用可能にします。
     
+    注意: 各インスタンスは独自のChatServiceを作成します。
+    メモリを節約するには、既存のChatServiceインスタンスを
+    chat_service引数で渡してください。
+    
     例:
         >>> from langchain_adapter import OpenVINOChatLangChain
+        >>> # 新しいモデルインスタンスを作成
         >>> chat = OpenVINOChatLangChain()
         >>> response = chat("こんにちは")
         >>> print(response)
+        
+        >>> # 既存のChatServiceを共有
+        >>> from chat_service import ChatService
+        >>> shared_service = ChatService()
+        >>> chat1 = OpenVINOChatLangChain(chat_service=shared_service)
+        >>> chat2 = OpenVINOChatLangChain(chat_service=shared_service)
     """
     
-    chat_service: ChatService = None
+    chat_service: Optional[ChatService] = None
     session_id: Optional[str] = None
     system_prompt: Optional[str] = None
     model_name: str = "TinyLlama/TinyLlama-1.1B-Chat-v1.0"
     
-    def __init__(self, **kwargs):
+    def __init__(self, chat_service: Optional[ChatService] = None, **kwargs):
         """
         初期化
         
         Args:
-            model_name: 使用するLLMモデル名
+            chat_service: 既存のChatServiceインスタンス（オプション）
+                         指定しない場合は新しいインスタンスを作成
+            model_name: 使用するLLMモデル名（chat_service未指定時のみ使用）
             session_id: セッションID（指定しない場合は新規作成）
             system_prompt: システムプロンプト
         """
@@ -70,8 +83,13 @@ class OpenVINOChatLangChain(LLM):
                 "pip install langchain"
             )
         
-        # ChatServiceのインスタンスを作成
-        self.chat_service = ChatService(model_name=self.model_name)
+        # ChatServiceのインスタンスを取得または作成
+        if chat_service is not None:
+            self.chat_service = chat_service
+            logger.info("Using shared ChatService instance")
+        else:
+            self.chat_service = ChatService(model_name=self.model_name)
+            logger.info(f"Created new ChatService instance with model: {self.model_name}")
     
     @property
     def _llm_type(self) -> str:
@@ -146,14 +164,17 @@ def is_langchain_available() -> bool:
 
 def create_langchain_chat(
     model_name: str = "TinyLlama/TinyLlama-1.1B-Chat-v1.0",
-    system_prompt: Optional[str] = None
+    system_prompt: Optional[str] = None,
+    chat_service: Optional[ChatService] = None
 ) -> Any:
     """
     LangChain互換のチャットインスタンスを作成
     
     Args:
-        model_name: 使用するLLMモデル名
+        model_name: 使用するLLMモデル名（chat_service未指定時のみ使用）
         system_prompt: システムプロンプト
+        chat_service: 既存のChatServiceインスタンス（オプション）
+                     指定するとメモリを節約できます
     
     Returns:
         OpenVINOChatLangChainインスタンス
@@ -168,6 +189,7 @@ def create_langchain_chat(
         )
     
     return OpenVINOChatLangChain(
+        chat_service=chat_service,
         model_name=model_name,
         system_prompt=system_prompt
     )

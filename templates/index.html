@@ -26,14 +26,16 @@
         </header>
 
         <!-- タブナビゲーション -->
-        <div class="tab-navigation">
-            <button class="tab-btn active" data-tab="translation">
+        <div class="tab-navigation" role="tablist" aria-label="機能選択">
+            <button class="tab-btn active" data-tab="translation" role="tab" 
+                    aria-selected="true" aria-controls="translation-tab" id="tab-translation">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M5 12h14M12 5l7 7-7 7"/>
                 </svg>
                 翻訳
             </button>
-            <button class="tab-btn" data-tab="chat">
+            <button class="tab-btn" data-tab="chat" role="tab" 
+                    aria-selected="false" aria-controls="chat-tab" id="tab-chat">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
                 </svg>
@@ -43,7 +45,8 @@
 
         <main class="main-content">
             <!-- 翻訳タブコンテンツ -->
-            <div class="tab-content active" id="translation-tab">
+            <div class="tab-content active" id="translation-tab" role="tabpanel" 
+                 aria-labelledby="tab-translation">
             <div class="translation-card">
                 <div class="language-selector">
                     <div class="lang-option">
@@ -139,7 +142,8 @@
             <!-- 翻訳タブコンテンツ終了 -->
 
             <!-- チャットタブコンテンツ -->
-            <div class="tab-content" id="chat-tab">
+            <div class="tab-content" id="chat-tab" role="tabpanel" 
+                 aria-labelledby="tab-chat">
                 <div class="chat-card">
                     <div class="chat-header">
                         <h2>💬 AIチャット</h2>
@@ -206,17 +210,52 @@
         const tabButtons = document.querySelectorAll('.tab-btn');
         const tabContents = document.querySelectorAll('.tab-content');
 
-        tabButtons.forEach(button => {
+        function switchTab(tabName) {
+            // すべてのタブボタンとコンテンツから active クラスを削除
+            tabButtons.forEach(btn => {
+                btn.classList.remove('active');
+                btn.setAttribute('aria-selected', 'false');
+            });
+            tabContents.forEach(content => content.classList.remove('active'));
+            
+            // 指定されたタブをアクティブに
+            const activeButton = document.querySelector(`[data-tab="${tabName}"]`);
+            if (activeButton) {
+                activeButton.classList.add('active');
+                activeButton.setAttribute('aria-selected', 'true');
+                document.getElementById(`${tabName}-tab`).classList.add('active');
+            }
+        }
+
+        tabButtons.forEach((button, index) => {
             button.addEventListener('click', () => {
                 const tabName = button.getAttribute('data-tab');
+                switchTab(tabName);
+            });
+
+            // キーボードナビゲーション
+            button.addEventListener('keydown', (e) => {
+                let newIndex = index;
                 
-                // すべてのタブボタンとコンテンツから active クラスを削除
-                tabButtons.forEach(btn => btn.classList.remove('active'));
-                tabContents.forEach(content => content.classList.remove('active'));
+                if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    newIndex = index > 0 ? index - 1 : tabButtons.length - 1;
+                } else if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    newIndex = index < tabButtons.length - 1 ? index + 1 : 0;
+                } else if (e.key === 'Home') {
+                    e.preventDefault();
+                    newIndex = 0;
+                } else if (e.key === 'End') {
+                    e.preventDefault();
+                    newIndex = tabButtons.length - 1;
+                }
                 
-                // クリックされたタブをアクティブに
-                button.classList.add('active');
-                document.getElementById(`${tabName}-tab`).classList.add('active');
+                if (newIndex !== index) {
+                    tabButtons[newIndex].focus();
+                    const tabName = tabButtons[newIndex].getAttribute('data-tab');
+                    switchTab(tabName);
+                }
             });
         });
 
@@ -365,6 +404,8 @@
             
             const bubbleDiv = document.createElement('div');
             bubbleDiv.className = 'message-bubble';
+            // XSS対策: textContentを使用してHTMLをエスケープ
+            // チャットメッセージはプレーンテキストのみ対応（HTML/Markdownは無効）
             bubbleDiv.textContent = content;
             
             messageDiv.appendChild(bubbleDiv);
@@ -450,7 +491,7 @@
         clearChatBtn.addEventListener('click', async () => {
             if (!currentSessionId) {
                 // ローカルのメッセージのみクリア
-                chatMessages.innerHTML = '<div class="welcome-message"><p>👋 こんにちは！何かお手伝いできることはありますか？</p></div>';
+                clearChatMessages();
                 return;
             }
 
@@ -464,11 +505,29 @@
                 });
 
                 if (response.ok) {
-                    chatMessages.innerHTML = '<div class="welcome-message"><p>👋 こんにちは！何かお手伝いできることはありますか？</p></div>';
+                    clearChatMessages();
                     currentSessionId = null;
                 }
             } catch (error) {
                 showChatError('履歴のクリアに失敗しました');
+            }
+        });
+        
+        // チャットメッセージをクリアする関数
+        function clearChatMessages() {
+            // 既存のメッセージをすべて削除
+            while (chatMessages.firstChild) {
+                chatMessages.removeChild(chatMessages.firstChild);
+            }
+            
+            // ウェルカムメッセージを追加
+            const welcomeDiv = document.createElement('div');
+            welcomeDiv.className = 'welcome-message';
+            const welcomeP = document.createElement('p');
+            welcomeP.textContent = '👋 こんにちは！何かお手伝いできることはありますか？';
+            welcomeDiv.appendChild(welcomeP);
+            chatMessages.appendChild(welcomeDiv);
+        }
             }
         });
     </script>
