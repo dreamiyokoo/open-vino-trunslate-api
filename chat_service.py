@@ -398,7 +398,7 @@ class ChatService:
                     session["messages"] = session["messages"][-(self.max_history_messages * 2) :]
 
                 # プロンプトをフォーマット（ロック外で実行）
-                prompt = self._format_prompt(session["messages"][:], session["system_prompt"], model_name=used_model)  # コピーを作成
+                prompt = self._format_prompt(session["messages"][:], session["system_prompt"], model_name=used_model)
 
             # 応答を生成（ロック外で実行 - 時間がかかる処理）
             response_text = self._generate_response(prompt, used_model)
